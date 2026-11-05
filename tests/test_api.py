@@ -60,3 +60,13 @@ def test_complete_unknown_task_returns_404() -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Tarefa não encontrada"}
+
+
+def test_root_returns_api_info() -> None:
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "API DevOps em execução",
+        "docs": "/docs",
+    }
