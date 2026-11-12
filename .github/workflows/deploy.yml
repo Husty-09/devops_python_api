@@ -1,0 +1,164 @@
+
+name: Deploy AWS ECR EC2
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    name: Validar aplicacao
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v6
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Verificar qualidade
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Executar testes
+        run: pytest --cov=app --cov-report=term-missing
+
+  deploy:
+    name: Publicar ECR e atualizar EC2
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      AWS_REGION: us-east-1
+      ECR_REGISTRY: 502001549054.dkr.ecr.us-east-1.amazonaws.com
+      ECR_REPOSITORY: devops-python-api
+      EC2_INSTANCE_ID: i-0bf20b456e6d10b12
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v6
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Confirmar identidade AWS
+        run: aws sts get-caller-identity
+
+      - name: Construir imagem Docker
+        run: |
+          docker build \
+            -t "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA" .
+
+      - name: Publicar imagem no ECR
+        run: |
+          aws ecr get-login-password --region "$AWS_REGION" |
+            docker login --username AWS \
+              --password-stdin "$ECR_REGISTRY"
+
+          if aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$GITHUB_SHA" \
+            --region "$AWS_REGION" >/dev/null 2>&1; then
+            echo "Imagem deste commit ja existe no ECR."
+          else
+            docker push \
+              "$ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA"
+          fi
+
+          docker logout "$ECR_REGISTRY"
+
+      - name: Preparar comando de deploy SSM
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          region = os.environ["AWS_REGION"]
+          registry = os.environ["ECR_REGISTRY"]
+          repository = os.environ["ECR_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          image = f"{registry}/{repository}:{sha}"
+
+          script = f"""set -eu
+          aws ecr get-login-password --region {region} | docker login --username AWS --password-stdin {registry}
+          docker pull {image}
+          docker rm -f devops-python-api 2>/dev/null || true
+          docker run -d --restart unless-stopped --name devops-python-api -p 8000:8000 {image}
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              echo
+              docker ps --filter name=devops-python-api
+              docker logout {registry}
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs devops-python-api
+          exit 1
+          """
+
+          with open("ssm-params.json", "w") as f:
+              json.dump({"commands": [script]}, f)
+          PY
+
+      - name: Executar deploy via Systems Manager
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$EC2_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file://ssm-params.json \
+            --region "$AWS_REGION" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "Comando SSM: $COMMAND_ID"
+
+          for attempt in $(seq 1 60); do
+            sleep 5
+
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$EC2_INSTANCE_ID" \
+              --region "$AWS_REGION" \
+              --query Status \
+              --output text 2>/dev/null) || continue
+
+            echo "Status SSM: $STATUS"
+
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut|Cancelling)
+                break
+                ;;
+            esac
+          done
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$EC2_INSTANCE_ID" \
+            --region "$AWS_REGION" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' \
+            --output json
+
+          test "${STATUS:-Unknown}" = "Success"
