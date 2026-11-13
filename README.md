@@ -1,314 +1,603 @@
-﻿# API Python para demonstrar DevOps
+# Projeto DevOps — Pipeline CI/CD com GitHub Actions, Docker e AWS
 
-RepositÃ³rio didÃ¡tico para apresentar, em uma Ãºnica aplicaÃ§Ã£o, trÃªs ideias que se conectam:
+**Disciplina:** Integração DevOps  
+**Projeto:** devops-python-api  
+**Repositório:** [Husty-09/devops_python_api](https://github.com/Husty-09/devops_python_api)  
+**Versão atual da aplicação:** 1.1.0
 
-1. uma API HTTP escrita em Python;
-2. integraÃ§Ã£o contÃ­nua com GitHub Actions;
-3. execuÃ§Ã£o reproduzÃ­vel com Docker.
+---
 
-O projeto utiliza FastAPI, pytest, Ruff, GitHub Actions e Docker. Os dados ficam em memÃ³ria para manter a atenÃ§Ã£o da aula no fluxo DevOps, sem introduzir banco de dados.
+## 1. Sobre o projeto
 
-## O que os estudantes devem observar
+Este projeto tem como objetivo implementar uma pipeline completa de **Integração Contínua (CI) e Entrega Contínua (CD)** para uma API desenvolvida em Python.
 
-- O cÃ³digo funciona localmente e no runner do GitHub.
-- A mesma suÃ­te de testes Ã© executada pelo desenvolvedor e pelo pipeline.
-- O Dockerfile descreve o ambiente necessÃ¡rio para executar a API.
-- O pipeline sÃ³ testa o container depois que qualidade e testes foram aprovados.
-- Logs, cobertura e relatÃ³rios funcionam como evidÃªncias, nÃ£o apenas como mensagens coloridas.
+A aplicação utiliza FastAPI e permite criar, listar e concluir tarefas por meio de requisições HTTP.
 
-## Estrutura do repositÃ³rio
+A solução automatiza as etapas de testes, construção de imagens Docker, publicação no Amazon Elastic Container Registry (ECR) e implantação em uma instância Amazon EC2.
+
+O principal objetivo é garantir que alterações aprovadas e incorporadas à branch `main` sejam testadas e implantadas automaticamente, sem necessidade de executar comandos manuais de deploy no servidor.
+
+## 2. Tecnologias utilizadas
+
+| Tecnologia | Finalidade |
+|---|---|
+| Python 3.13 | Linguagem utilizada na aplicação |
+| FastAPI | Desenvolvimento da API REST |
+| Uvicorn | Servidor de execução da API |
+| Pytest | Execução dos testes automatizados |
+| Ruff | Análise estática e formatação do código |
+| Git e GitHub | Versionamento e colaboração |
+| GitHub Actions | Automação das pipelines CI/CD |
+| Docker | Containerização da aplicação |
+| Amazon ECR | Armazenamento privado das imagens Docker |
+| Amazon EC2 | Hospedagem da aplicação |
+| AWS IAM | Gerenciamento de permissões |
+| AWS Systems Manager | Execução remota e automatizada do deploy |
+| Vocareum | Ambiente educacional utilizado para acessar a AWS |
+
+## 3. Arquitetura da solução
+
+A aplicação utiliza a seguinte arquitetura de integração e entrega contínua:
 
 ```text
-.
-â”œâ”€â”€ .github/workflows/ci.yml   # pipeline de integraÃ§Ã£o contÃ­nua
-â”œâ”€â”€ app/
-â”‚   â”œâ”€â”€ __init__.py
-â”‚   â””â”€â”€ main.py                # API FastAPI
-â”œâ”€â”€ docs/
-â”‚   â”œâ”€â”€ API.md
-â”‚   â”œâ”€â”€ DOCKER.md
-â”‚   â”œâ”€â”€ GITHUB-ACTIONS.md
-â”‚   â””â”€â”€ ROTEIRO-AULA.md
-â”œâ”€â”€ tests/test_api.py          # testes automatizados
-â”œâ”€â”€ .dockerignore
-â”œâ”€â”€ .python-version
-â”œâ”€â”€ compose.yaml
-â”œâ”€â”€ Dockerfile
-â”œâ”€â”€ pyproject.toml             # configuraÃ§Ã£o de pytest, cobertura e Ruff
-â”œâ”€â”€ requirements.txt           # dependÃªncias de execuÃ§Ã£o
-â””â”€â”€ requirements-dev.txt       # dependÃªncias de desenvolvimento e CI
+       DESENVOLVEDOR
+             |
+             v
+     Branch de desenvolvimento
+             |
+             v
+       Pull Request
+             |
+             v
+      GITHUB ACTIONS
+      Integração contínua
+             |
+       +-----+------+
+       |            |
+    Ruff Check    Pytest
+       |            |
+       +-----+------+
+             |
+       Testes aprovados
+             |
+             v
+       Merge na main
+             |
+             v
+       GITHUB ACTIONS
+       Entrega contínua
+             |
+             v
+       Docker Build
+             |
+             v
+         AMAZON ECR
+       Imagem publicada
+             |
+             v
+     AWS Systems Manager
+             |
+             v
+         AMAZON EC2
+             |
+             v
+       Docker Pull
+             |
+             v
+      Substituição do
+      contêiner anterior
+             |
+             v
+       API ATUALIZADA
+          Porta 8000
 ```
 
-## 1. Executar localmente
+O processo é iniciado automaticamente após alterações na branch principal do repositório.
 
-PrÃ©-requisitos: Git e Python 3.13.
+## 4. Estrutura do repositório
 
-### Linux e macOS
+```text
+devops_python_api/
+|
+|-- .github/
+|   |-- workflows/
+|       |-- ci.yml
+|       |-- deploy.yml
+|
+|-- app/
+|   |-- __init__.py
+|   |-- main.py
+|
+|-- tests/
+|   |-- test_api.py
+|
+|-- docs/
+|
+|-- evidencias/
+|   |-- 01-ci.png
+|   |-- 02-merges.png
+|   |-- 03-deploys.png
+|   |-- 04-docker.png
+|   |-- 05-V1.jpg
+|   |-- 06-V2.jpg
+|
+|-- Dockerfile
+|-- .dockerignore
+|-- compose.yaml
+|-- requirements.txt
+|-- requirements-dev.txt
+|-- pyproject.toml
+|-- .python-version
+|-- README.md
+```
+
+## 5. Funcionalidades da API
+
+A API disponibiliza endpoints para gerenciamento de tarefas e verificação da aplicação.
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| GET | `/` | Retorna informações da aplicação |
+| GET | `/health` | Verifica o status e a versão |
+| GET | `/tasks` | Lista as tarefas cadastradas |
+| POST | `/tasks` | Cria uma nova tarefa |
+| PATCH | `/tasks/{id}/done` | Marca uma tarefa como concluída |
+
+### Exemplo de resposta do endpoint /health
+
+```json
+{
+  "status": "ok",
+  "version": "1.1.0"
+}
+```
+
+O endpoint `/health` também é utilizado pela pipeline e pelo Docker para verificar o funcionamento da aplicação.
+
+## 6. Execução local
+
+### Pré-requisitos
+
+- Git
+- Python 3.13
+- pip
+
+### Clonar o repositório
+
+```bash
+git clone https://github.com/Husty-09/devops_python_api.git
+cd devops_python_api
+```
+
+### Criar o ambiente virtual
+
+No Windows PowerShell:
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+No Linux:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --requirement requirements-dev.txt
+```
+
+### Instalar as dependências
+
+```bash
+python -m pip install -r requirements-dev.txt
+```
+
+### Iniciar a aplicação
+
+```bash
 uvicorn app.main:app --reload
 ```
 
-### Windows PowerShell
+A aplicação ficará disponível em:
 
-```powershell
-py -3.13 -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install --requirement requirements-dev.txt
-uvicorn app.main:app --reload
-```
+- API: http://localhost:8000
+- Documentação Swagger: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
 
-Acesse:
+## 7. Testes automatizados
 
-- API: <http://localhost:8000>
-- documentaÃ§Ã£o Swagger: <http://localhost:8000/docs>
-- verificaÃ§Ã£o de saÃºde: <http://localhost:8000/health>
+O projeto utiliza Pytest para verificar o comportamento dos endpoints.
 
-## 2. Experimentar a API
+Os testes validam:
 
-```bash
-curl http://localhost:8000/health
+- Resposta do endpoint de saúde e versão.
+- Listagem inicial de tarefas.
+- Criação de novas tarefas.
+- Validação de títulos inválidos.
+- Conclusão de tarefas.
+- Tratamento de tarefas inexistentes.
+- Resposta do endpoint principal.
 
-curl -X POST http://localhost:8000/tasks \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Estudar integraÃ§Ã£o contÃ­nua"}'
-
-curl http://localhost:8000/tasks
-
-curl -X PATCH http://localhost:8000/tasks/1/done
-```
-
-Endpoints:
-
-| MÃ©todo | Caminho | Objetivo | Resposta esperada |
-|---|---|---|---|
-| GET | `/` | Apresentar a API | `200` |
-| GET | `/health` | Informar saÃºde e versÃ£o | `200` |
-| GET | `/tasks` | Listar tarefas | `200` |
-| POST | `/tasks` | Criar uma tarefa | `201` |
-| PATCH | `/tasks/{id}/done` | Concluir uma tarefa | `200` ou `404` |
-
-Veja a explicaÃ§Ã£o do cÃ³digo em [docs/API.md](docs/API.md).
-
-## 3. Executar as verificaÃ§Ãµes locais
+### Executar os testes
 
 ```bash
-ruff check .
-ruff format --check .
-pytest --cov=app --cov-report=term-missing
+python -m pytest --cov=app --cov-report=term-missing
 ```
 
-Esses comandos sÃ£o deliberadamente iguais aos usados no GitHub Actions. Se uma verificaÃ§Ã£o falhar localmente, ela tambÃ©m deverÃ¡ falhar no pipeline.
-
-Para aplicar a formataÃ§Ã£o automaticamente:
+### Verificar a qualidade do código
 
 ```bash
-ruff format .
+python -m ruff check .
+python -m ruff format --check .
 ```
 
-## 4. Publicar no GitHub e acionar a CI
+Na validação local da versão 1.1.0, foram obtidos os seguintes resultados:
 
-O diretÃ³rio jÃ¡ Ã© inicializado como repositÃ³rio Git local. Crie um repositÃ³rio vazio no GitHub e execute:
+| Indicador | Resultado |
+|---|---|
+| Testes executados | 7 |
+| Testes aprovados | 7 |
+| Cobertura de código | 96,97% |
+| Cobertura mínima configurada | 90% |
+| Análise estática | Aprovada |
+| Verificação de formatação | Aprovada |
+
+Essas verificações também são executadas automaticamente pelo GitHub Actions.
+
+## 8. Containerização com Docker
+
+A aplicação utiliza um Dockerfile baseado na imagem `python:3.13-slim`.
+
+A imagem instala as dependências necessárias e executa a API utilizando Uvicorn na porta 8000.
+
+### Construir a imagem localmente
 
 ```bash
-git remote add origin https://github.com/SEU-USUARIO/devops-python-api.git
-git push -u origin main
+docker build -t devops-python-api:local .
 ```
 
-O arquivo `.github/workflows/ci.yml` dispara o pipeline em trÃªs situaÃ§Ãµes:
-
-- `push` na branch `main`;
-- `pull_request` destinado Ã  `main`;
-- execuÃ§Ã£o manual pela aba **Actions**.
-
-Na aba **Actions**, abra a execuÃ§Ã£o e faÃ§a a leitura nesta ordem:
-
-1. workflow;
-2. job;
-3. primeiro step que falhou;
-4. comando e mensagem que explicam a falha.
-
-A explicaÃ§Ã£o detalhada do YAML estÃ¡ em [docs/GITHUB-ACTIONS.md](docs/GITHUB-ACTIONS.md).
-
-## 5. Executar com Docker
+### Executar o contêiner
 
 ```bash
-docker build -t devops-python-api:v1 .
-docker run --rm -p 8000:8000 --name devops-python-api devops-python-api:v1
+docker run -d \
+  --name devops-python-api \
+  -p 8000:8000 \
+  devops-python-api:local
 ```
 
-Em outro terminal:
+### Verificar o contêiner
 
 ```bash
-curl http://localhost:8000/health
 docker ps
-docker logs devops-python-api
 ```
 
-Com Docker Compose:
+### Testar a API
+
+```bash
+curl http://localhost:8000/health
+```
+
+### Execução alternativa com Docker Compose
 
 ```bash
 docker compose up --build
+```
+
+Para encerrar:
+
+```bash
 docker compose down
 ```
 
-Veja a leitura detalhada do Dockerfile em [docs/DOCKER.md](docs/DOCKER.md).
+## 9. Pipeline de Integração Contínua (CI)
 
-## Falhas intencionais para demonstrar
+**Arquivo:** `.github/workflows/ci.yml`
 
-### Falha de teste
+A pipeline CI é executada automaticamente na abertura ou atualização de Pull Requests destinados à branch `main`.
 
-Em `app/main.py`, altere temporariamente a versÃ£o do health check para `2.0.0`. O teste espera `1.1.0`, entÃ£o o pytest e o pipeline devem falhar.
+O workflow realiza as seguintes operações:
 
-### Falha de qualidade
+1. Baixa o código do repositório.
+2. Configura o ambiente Python.
+3. Instala as dependências do projeto.
+4. Executa análise estática com Ruff.
+5. Verifica a formatação dos arquivos.
+6. Executa os testes com Pytest.
+7. Verifica a cobertura de testes.
+8. Constrói uma imagem Docker para teste.
+9. Inicializa o contêiner e verifica o endpoint `/health`.
+10. Disponibiliza relatórios da execução.
 
-Adicione um import nÃ£o utilizado no inÃ­cio de `app/main.py`:
+O processo de publicação e deploy não depende apenas da abertura do Pull Request.
 
-```python
-import os
+**Uma alteração só deve ser incorporada à branch principal após a aprovação dos testes.**
+
+Caso os testes falhem, o job de deploy do workflow de entrega contínua não será executado.
+
+### Evidência da integração contínua
+
+![Pipeline de integração contínua](evidencias/01-ci.png)
+
+Execução da CI na atualização para a versão 1.1.0:
+
+[Visualizar execução no GitHub Actions](https://github.com/Husty-09/devops_python_api/actions/runs/43334592186)
+
+## 10. Versionamento e Pull Requests
+
+O desenvolvimento foi realizado utilizando branches, commits e Pull Requests.
+
+Esse procedimento permite validar alterações antes que sejam incorporadas à branch principal.
+
+### Evidência dos Pull Requests e merges
+
+![Histórico de Pull Requests e merges](evidencias/02-merges.png)
+
+### Pull Requests utilizados
+
+| Pull Request | Descrição |
+|---|---|
+| [PR #1](https://github.com/Husty-09/devops_python_api/pull/1) | Adição de teste automatizado |
+| [PR #2](https://github.com/Husty-09/devops_python_api/pull/2) | Implementação do deploy automático na AWS |
+| [PR #3](https://github.com/Husty-09/devops_python_api/pull/3) | Atualização da aplicação para a versão 1.1.0 |
+| [PR #4](https://github.com/Husty-09/devops_python_api/pull/4) | Documentação técnica e evidências |
+
+## 11. Publicação de imagens no Amazon ECR
+
+O Amazon Elastic Container Registry é utilizado para armazenar as imagens Docker em um repositório privado.
+
+**Configurações utilizadas:**
+
+| Propriedade | Valor |
+|---|---|
+| Serviço | Amazon ECR |
+| Região | us-east-1 |
+| Tipo de repositório | Privado |
+| Nome | devops-python-api |
+| Registro | 502001549054.dkr.ecr.us-east-1.amazonaws.com |
+| Identificação das imagens | SHA do commit |
+| Mutabilidade das tags | Immutable |
+
+### URI do repositório
+
+```text
+502001549054.dkr.ecr.us-east-1.amazonaws.com/devops-python-api
 ```
 
-O step `ruff check .` localizarÃ¡ o problema.
+As imagens são construídas e publicadas automaticamente pelo GitHub Actions após a validação dos testes.
 
-### Falha de rede no container
+Cada imagem recebe uma tag associada ao commit, permitindo identificar a versão exata do código utilizado na implantação.
 
-No `Dockerfile`, troque `--host 0.0.0.0` por `--host 127.0.0.1`. O processo iniciarÃ¡, mas o serviÃ§o nÃ£o ficarÃ¡ acessÃ­vel pela porta publicada no host.
+### Imagens dos dois deploys
 
-## PrÃ³ximos desafios
+| Versão | Tag do commit |
+|---|---|
+| 1.0.0 | `de2dc429a12c2d379866556e8ca4147cf8991be9` |
+| 1.1.0 | `6571dc71b8b8a6e0b9d4bf383756dd2ae8a179f0` |
 
-- Adicionar um endpoint `DELETE /tasks/{id}` e seus testes.
-- Executar os testes em uma matriz com Python 3.12, 3.13 e 3.14.
-- Publicar a imagem em um registry somente apÃ³s a aprovaÃ§Ã£o dos testes.
-- Substituir o armazenamento em memÃ³ria por um banco de dados.
+### Evidência do Amazon ECR
 
-## ReferÃªncias oficiais
+![Imagens Docker publicadas no Amazon ECR](evidencias/04-docker.png)
 
-- [GitHub Actions: criar e testar Python](https://docs.github.com/pt/actions/tutorials/build-and-test-code/building-and-testing-python)
-- [actions/checkout](https://github.com/actions/checkout)
-- [actions/setup-python](https://github.com/actions/setup-python)
-- [actions/upload-artifact](https://github.com/actions/upload-artifact)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Docker para Python](https://docs.docker.com/language/python/)
+## 12. Implantação na Amazon EC2
+
+A aplicação é hospedada em uma única instância Amazon EC2.
+
+### Configuração da instância
+
+| Configuração | Valor |
+|---|---|
+| Nome | devops-python-api-ec2 |
+| Sistema operacional | Amazon Linux 2023 |
+| Tipo | t3.micro |
+| Região | us-east-1 |
+| Aplicação | FastAPI |
+| Contêiner | Docker |
+| Porta HTTP | 8000 |
+| IAM Role | LabRole |
+| Gerenciamento | AWS Systems Manager |
+
+A instância possui Docker instalado e utiliza uma IAM Role para autenticação na AWS.
+
+O acesso administrativo e a execução de comandos remotos podem ser realizados por meio dos serviços de gerenciamento disponibilizados pela AWS.
+
+### Funcionamento do deploy
+
+O GitHub Actions utiliza o AWS Systems Manager para enviar comandos à instância EC2.
+
+Durante a atualização, a instância:
+
+1. Autentica o Docker no Amazon ECR.
+2. Baixa a imagem correspondente ao commit.
+3. Remove o contêiner anterior.
+4. Inicializa um novo contêiner com a imagem atualizada.
+5. Publica a aplicação na porta 8000.
+6. Verifica a resposta do endpoint `/health`.
+7. Retorna o resultado da execução ao GitHub Actions.
+
+Esse processo ocorre automaticamente, sem necessidade de acessar manualmente a EC2 após cada alteração.
+
+## 13. Pipeline de Entrega Contínua (CD)
+
+**Arquivo:** `.github/workflows/deploy.yml`
+
+O workflow é acionado automaticamente após um push na branch `main`, incluindo os merges realizados por Pull Requests.
+
+A pipeline possui dois jobs principais.
+
+### Job 1 — Validar aplicação
+
+Realiza as verificações de qualidade e executa os testes automatizados.
+
+### Job 2 — Publicar ECR e atualizar EC2
+
+Esse job depende da aprovação do primeiro.
+
+Suas responsabilidades são:
+
+- Autenticar na AWS.
+- Construir a imagem Docker.
+- Publicar a imagem no Amazon ECR.
+- Enviar comandos pelo Systems Manager.
+- Baixar a imagem na EC2.
+- Substituir o contêiner anterior.
+- Verificar a aplicação atualizada.
+
+A autenticação do GitHub Actions é realizada utilizando credenciais temporárias configuradas nos GitHub Actions Secrets.
+
+### Evidência dos deploys
+
+![Execuções automáticas de deploy](evidencias/03-deploys.png)
+
+### Histórico de execução
+
+**Primeira implantação — versão 1.0.0**
+
+[Visualizar primeiro deploy](https://github.com/Husty-09/devops_python_api/actions/runs/43328734810)
+
+**Segunda implantação — versão 1.1.0**
+
+[Visualizar segundo deploy](https://github.com/Husty-09/devops_python_api/actions/runs/43334790582)
+
+Os dois workflows de implantação foram concluídos com sucesso.
+
+## 14. Demonstração de atualização automática
+
+Para comprovar o funcionamento da entrega contínua, foram realizadas duas implantações da aplicação.
+
+### Versão inicial — 1.0.0
+
+A primeira versão foi publicada automaticamente após a implementação da pipeline.
+
+O endpoint `/health` retornava:
+
+```json
+{
+  "status": "ok",
+  "version": "1.0.0"
+}
+```
+
+**Evidência da primeira versão:**
+
+![Primeira versão da API](evidencias/05-V1.jpg)
+
+### Segunda versão — 1.1.0
+
+Foi criada uma nova branch de desenvolvimento para alterar a versão da API de `1.0.0` para `1.1.0`.
+
+Também foram atualizados os testes automatizados para validar a nova versão.
+
+Após os testes serem aprovados pelo GitHub Actions, o Pull Request foi incorporado à branch `main`.
+
+Isso iniciou automaticamente uma nova execução do workflow de entrega contínua.
+
+A pipeline construiu uma nova imagem Docker, publicou a imagem no ECR e atualizou o contêiner executado na EC2.
+
+O endpoint `/health` passou a retornar:
+
+```json
+{
+  "status": "ok",
+  "version": "1.1.0"
+}
+```
+
+**Evidência da segunda versão:**
+
+![Segunda versão da API](evidencias/06-V2.jpg)
+
+A mudança entre as versões comprova a atualização da aplicação por meio da pipeline automatizada, sem execução manual dos comandos de implantação.
+
+## 15. Acesso à aplicação publicada
+
+A API foi disponibilizada utilizando o endereço IPv4 público da instância EC2 e a porta 8000.
+
+**Endpoint de verificação:**
+
+http://54.210.208.229:8000/health
+
+**Documentação interativa Swagger:**
+
+http://54.210.208.229:8000/docs
+
+Para verificar a versão implantada, execute:
+
+```bash
+curl http://54.210.208.229:8000/health
+```
+
+**Resposta esperada da versão 1.1.0:**
+
+```json
+{
+  "status": "ok",
+  "version": "1.1.0"
+}
+```
+
+**Observação:** como a aplicação utiliza um ambiente AWS educacional, o endereço IPv4 público pode mudar após a reinicialização da instância. A disponibilidade também depende de o laboratório e a EC2 estarem ativos.
+
+Durante os testes, a aplicação foi acessível por conexão móvel 4G, enquanto a rede da instituição apresentou restrições de conectividade para a porta utilizada.
+
+## 16. Segurança e limitações
+
+A solução foi desenvolvida para fins acadêmicos e possui as seguintes características e limitações:
+
+- **Credenciais:** as credenciais AWS são armazenadas nos GitHub Actions Secrets e não diretamente nos arquivos versionados.
+- **IAM Role:** a EC2 utiliza a função `LabRole` fornecida pelo ambiente educacional.
+- **Acesso ao ECR:** as imagens são armazenadas em um repositório privado.
+- **Credenciais temporárias:** o Vocareum fornece credenciais com prazo de validade, exigindo renovação para novas implantações.
+- **Dados em memória:** as tarefas cadastradas não são persistidas e podem ser perdidas durante a substituição do contêiner.
+- **Disponibilidade:** a atualização substitui o contêiner atual, podendo causar uma breve interrupção.
+- **Rollback:** a pipeline não possui um mecanismo automático de retorno à versão anterior.
+- **HTTP:** a API foi publicada sem HTTPS, exclusivamente para demonstração acadêmica.
+- **Recursos AWS:** a instância e os demais recursos devem ser interrompidos ou removidos após a conclusão e avaliação do trabalho, evitando cobranças desnecessárias.
+
+Para um ambiente de produção, seriam recomendados HTTPS, armazenamento persistente, autenticação de longa duração baseada em funções IAM e OIDC, políticas de acesso mais restritivas, monitoramento e estratégias de rollback.
+
+## 17. Resultado final
+
+O projeto demonstrou a implementação de uma pipeline completa de CI/CD, integrando as ferramentas utilizadas na disciplina de Integração DevOps.
+
+Foram realizados testes automatizados, análise de qualidade, containerização, publicação de imagens no Amazon ECR e implantação automática em uma instância EC2.
+
+A atualização da versão `1.0.0` para `1.1.0` comprovou que alterações aprovadas e incorporadas à branch `main` podem ser publicadas automaticamente na infraestrutura AWS.
+
+**Fluxo final implementado:**
+
+```text
+Alteração no código
+       |
+       v
+Nova branch
+       |
+       v
+Pull Request
+       |
+       v
+Testes automatizados
+       |
+       v
+Merge na main
+       |
+       v
+Build Docker
+       |
+       v
+Publicação no ECR
+       |
+       v
+Deploy via SSM na EC2
+       |
+       v
+Aplicação atualizada
+```
+
+O resultado demonstra a aplicação integrada de versionamento, testes automatizados, containerização, integração contínua e entrega contínua.
 
 ---
 
-## Arquitetura CI/CD na AWS
+**Repositório GitHub:**  
+https://github.com/Husty-09/devops_python_api
 
-Este projeto implementa integraÃ§Ã£o e entrega contÃ­nuas usando GitHub Actions, Docker, Amazon ECR, Amazon EC2 e AWS Systems Manager.
-
-### Fluxo automatizado
-
-1. O desenvolvedor cria uma branch e abre um Pull Request para main.
-2. O GitHub Actions executa verificaÃ§Ãµes Ruff, testes pytest e cobertura.
-3. ApÃ³s aprovaÃ§Ã£o e merge, o workflow deploy.yml Ã© iniciado.
-4. Os testes sÃ£o executados antes de qualquer publicaÃ§Ã£o.
-5. Uma imagem Docker Ã© construÃ­da e identificada pelo SHA do commit.
-6. A imagem Ã© publicada no Amazon ECR privado.
-7. O AWS Systems Manager envia comandos Ã  EC2.
-8. A EC2 baixa a imagem, substitui o contÃªiner e verifica /health.
-
-### Infraestrutura
-
-| Componente | ConfiguraÃ§Ã£o |
-|---|---|
-| RegiÃ£o AWS | us-east-1 |
-| Amazon ECR | devops-python-api |
-| Amazon EC2 | Amazon Linux 2023 |
-| Tipo de instÃ¢ncia | t3.micro |
-| Porta HTTP | 8000 |
-| Gerenciamento remoto | AWS Systems Manager |
-| AutenticaÃ§Ã£o EC2 | IAM Role LabRole |
-
-### Workflows
-
-**IntegraÃ§Ã£o contÃ­nua:** .github/workflows/ci.yml
-
-ResponsÃ¡vel por validar Pull Requests com anÃ¡lise estÃ¡tica, formataÃ§Ã£o, testes automatizados, cobertura e teste do contÃªiner.
-
-**Entrega contÃ­nua:** .github/workflows/deploy.yml
-
-Executado apÃ³s atualizaÃ§Ãµes da branch main. Realiza testes, construÃ§Ã£o da imagem, publicaÃ§Ã£o no ECR e implantaÃ§Ã£o automÃ¡tica na EC2 via SSM.
-
-### Acesso Ã  aplicaÃ§Ã£o
-
-Endpoint: http://54.210.208.229:8000/health
-
-DocumentaÃ§Ã£o Swagger: http://54.210.208.229:8000/docs
-
-O IPv4 pÃºblico pode mudar quando a instÃ¢ncia Ã© interrompida e reiniciada.
-
-### EvidÃªncias da automaÃ§Ã£o
-
-Primeiro deploy:
-https://github.com/Husty-09/devops_python_api/actions/runs/43328734810
-
-Segundo deploy:
-https://github.com/Husty-09/devops_python_api/actions/runs/43334790582
-
-CI da atualizaÃ§Ã£o:
-https://github.com/Husty-09/devops_python_api/actions/runs/43334592186
-
-### Pull Requests
-
-PR #1 - Testes:
-https://github.com/Husty-09/devops_python_api/pull/1
-
-PR #2 - Deploy AWS:
-https://github.com/Husty-09/devops_python_api/pull/2
-
-PR #3 - AtualizaÃ§Ã£o 1.1.0:
-https://github.com/Husty-09/devops_python_api/pull/3
-
-### Verificar a versÃ£o implantada
-
-Execute:
-
-curl http://IP_PUBLICO:8000/health
-
-A resposta esperada apÃ³s o segundo deploy Ã©:
-
-{"status":"ok","version":"1.1.0"}
-
-### LimitaÃ§Ãµes e seguranÃ§a
-
-- As tarefas sÃ£o armazenadas em memÃ³ria e desaparecem quando o contÃªiner Ã© substituÃ­do.
-- O laboratÃ³rio Vocareum utiliza credenciais AWS temporÃ¡rias.
-- A automaÃ§Ã£o depende da validade dessas credenciais e da disponibilidade da EC2.
-- As credenciais sÃ£o configuradas nos GitHub Actions Secrets.
-- A aplicaÃ§Ã£o Ã© exposta via HTTP para demonstraÃ§Ã£o acadÃªmica.
-- O deploy atual nÃ£o implementa rollback automÃ¡tico.
-- Os recursos AWS devem ser interrompidos ou excluÃ­dos apÃ³s a avaliaÃ§Ã£o.
-
-## EvidÃªncias da implementaÃ§Ã£o CI/CD
-
-As imagens abaixo demonstram a integraÃ§Ã£o contÃ­nua, os Pull Requests e a implantaÃ§Ã£o automÃ¡tica na AWS.
-
-### 1. IntegraÃ§Ã£o contÃ­nua
-![CI aprovada](evidencias/01-ci.png)
-
-### 2. Pull Requests e merges
-![Pull Requests](evidencias/02-merges.png)
-
-### 3. Deploys automÃ¡ticos
-![Deploys](evidencias/03-deploys.png)
-
-### 4. Imagens Docker no ECR
-![Docker no ECR](evidencias/04-docker.png)
-
-### 5. Primeira versÃ£o - 1.0.0
-![API v1](evidencias/05-V1.jpg)
-
-### 6. Segunda versÃ£o - 1.1.0
-![API v2](evidencias/06-V2.jpg)
-
-### Resultado
-
-A API foi implantada inicialmente na versÃ£o 1.0.0.
-
-ApÃ³s a aprovaÃ§Ã£o dos testes e o merge na main,
-o GitHub Actions publicou uma nova imagem no Amazon ECR
-e atualizou automaticamente a EC2 para a versÃ£o 1.1.0.
-
+**Disciplina:** Integração DevOps  
+**Trabalho final:** Implementação de uma Pipeline CI/CD com GitHub Actions, Docker, Amazon ECR e EC2
