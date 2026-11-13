@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 
 app = FastAPI(
     title="API DevOps de Tarefas",
-    description="API didática para demonstrar testes, CI e Docker.",
-    version="1.0.0",
+    description="API didÃ¡tica para demonstrar testes, CI e Docker.",
+    version="1.1.0",
 )
 
 
@@ -27,7 +27,7 @@ tasks: list[Task] = []
 @app.get("/")
 def root() -> dict[str, str]:
     return {
-        "message": "API DevOps em execução",
+        "message": "API DevOps em execuÃ§Ã£o",
         "docs": "/docs",
     }
 
@@ -57,4 +57,4 @@ def complete_task(task_id: int) -> Task:
         if task.id == task_id:
             task.done = True
             return task
-    raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    raise HTTPException(status_code=404, detail="Tarefa nÃ£o encontrada")

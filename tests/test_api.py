@@ -8,7 +8,7 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def clear_tasks() -> None:
-    """Isola os testes, limpando o armazenamento em memória."""
+    """Isola os testes, limpando o armazenamento em memÃ³ria."""
 
     tasks.clear()
 
@@ -17,7 +17,7 @@ def test_health_returns_version() -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "version": "1.0.0"}
+    assert response.json() == {"status": "ok", "version": "1.1.0"}
 
 
 def test_list_starts_empty() -> None:
@@ -59,7 +59,7 @@ def test_complete_unknown_task_returns_404() -> None:
     response = client.patch("/tasks/99/done")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Tarefa não encontrada"}
+    assert response.json() == {"detail": "Tarefa nÃ£o encontrada"}
 
 
 def test_root_returns_api_info() -> None:
@@ -67,6 +67,6 @@ def test_root_returns_api_info() -> None:
 
     assert response.status_code == 200
     assert response.json() == {
-        "message": "API DevOps em execução",
+        "message": "API DevOps em execuÃ§Ã£o",
         "docs": "/docs",
     }
