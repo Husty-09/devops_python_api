@@ -192,3 +192,93 @@ No `Dockerfile`, troque `--host 0.0.0.0` por `--host 127.0.0.1`. O processo inic
 - [actions/upload-artifact](https://github.com/actions/upload-artifact)
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [Docker para Python](https://docs.docker.com/language/python/)
+
+---
+
+## Arquitetura CI/CD na AWS
+
+Este projeto implementa integração e entrega contínuas usando GitHub Actions, Docker, Amazon ECR, Amazon EC2 e AWS Systems Manager.
+
+### Fluxo automatizado
+
+1. O desenvolvedor cria uma branch e abre um Pull Request para main.
+2. O GitHub Actions executa verificações Ruff, testes pytest e cobertura.
+3. Após aprovação e merge, o workflow deploy.yml é iniciado.
+4. Os testes são executados antes de qualquer publicação.
+5. Uma imagem Docker é construída e identificada pelo SHA do commit.
+6. A imagem é publicada no Amazon ECR privado.
+7. O AWS Systems Manager envia comandos à EC2.
+8. A EC2 baixa a imagem, substitui o contêiner e verifica /health.
+
+### Infraestrutura
+
+| Componente | Configuração |
+|---|---|
+| Região AWS | us-east-1 |
+| Amazon ECR | devops-python-api |
+| Amazon EC2 | Amazon Linux 2023 |
+| Tipo de instância | t3.micro |
+| Porta HTTP | 8000 |
+| Gerenciamento remoto | AWS Systems Manager |
+| Autenticação EC2 | IAM Role LabRole |
+
+### Workflows
+
+**Integração contínua:** .github/workflows/ci.yml
+
+Responsável por validar Pull Requests com análise estática, formatação, testes automatizados, cobertura e teste do contêiner.
+
+**Entrega contínua:** .github/workflows/deploy.yml
+
+Executado após atualizações da branch main. Realiza testes, construção da imagem, publicação no ECR e implantação automática na EC2 via SSM.
+
+### Acesso à aplicação
+
+Endpoint: http://54.210.208.229:8000/health
+
+Documentação Swagger: http://54.210.208.229:8000/docs
+
+O IPv4 público pode mudar quando a instância é interrompida e reiniciada.
+
+### Evidências da automação
+
+Primeiro deploy:
+https://github.com/Husty-09/devops_python_api/actions/runs/43328734810
+
+Segundo deploy:
+https://github.com/Husty-09/devops_python_api/actions/runs/43334790582
+
+CI da atualização:
+https://github.com/Husty-09/devops_python_api/actions/runs/43334592186
+
+### Pull Requests
+
+PR #1 - Testes:
+https://github.com/Husty-09/devops_python_api/pull/1
+
+PR #2 - Deploy AWS:
+https://github.com/Husty-09/devops_python_api/pull/2
+
+PR #3 - Atualização 1.1.0:
+https://github.com/Husty-09/devops_python_api/pull/3
+
+### Verificar a versão implantada
+
+Execute:
+
+curl http://IP_PUBLICO:8000/health
+
+A resposta esperada após o segundo deploy é:
+
+{"status":"ok","version":"1.1.0"}
+
+### Limitações e segurança
+
+- As tarefas são armazenadas em memória e desaparecem quando o contêiner é substituído.
+- O laboratório Vocareum utiliza credenciais AWS temporárias.
+- A automação depende da validade dessas credenciais e da disponibilidade da EC2.
+- As credenciais são configuradas nos GitHub Actions Secrets.
+- A aplicação é exposta via HTTP para demonstração acadêmica.
+- O deploy atual não implementa rollback automático.
+- Os recursos AWS devem ser interrompidos ou excluídos após a avaliação.
+
