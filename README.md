@@ -282,40 +282,32 @@ A resposta esperada após o segundo deploy é:
 - O deploy atual não implementa rollback automático.
 - Os recursos AWS devem ser interrompidos ou excluídos após a avaliação.
 
+## Evidências da implementação CI/CD
 
+As imagens abaixo demonstram a integração contínua, os Pull Requests e a implantação automática na AWS.
 
-## Evid?ncias da implementa??o CI/CD
-
-As imagens abaixo demonstram o funcionamento da integra??o cont?nua, dos Pull Requests, da publica??o das imagens Docker e da implanta??o autom?tica na AWS.
-
-### 1. Integra??o cont?nua
-
-![Testes automatizados aprovados](evidencias/01-ci.png)
+### 1. Integração contínua
+![CI aprovada](evidencias/01-ci.png)
 
 ### 2. Pull Requests e merges
+![Pull Requests](evidencias/02-merges.png)
 
-![Pull Requests realizados](evidencias/02-merges.png)
+### 3. Deploys automáticos
+![Deploys](evidencias/03-deploys.png)
 
-### 3. Deploys autom?ticos
+### 4. Imagens Docker no ECR
+![Docker no ECR](evidencias/04-docker.png)
 
-![Execu??es de deploy no GitHub Actions](evidencias/03-deploys.png)
+### 5. Primeira versão - 1.0.0
+![API v1](evidencias/05-V1.jpg)
 
-### 4. Imagens Docker no Amazon ECR
+### 6. Segunda versão - 1.1.0
+![API v2](evidencias/06-V2.jpg)
 
-![Imagens Docker publicadas no ECR](evidencias/04-docker.png)
+### Resultado
 
-### 5. Primeira vers?o da aplica??o - 1.0.0
+A API foi implantada inicialmente na versão 1.0.0.
 
-![API vers?o 1.0.0](evidencias/05-V1.jpg)
-
-### 6. Segunda vers?o da aplica??o - 1.1.0
-
-![API vers?o 1.1.0](evidencias/06-V2.jpg)
-
-### Resultado da atualiza??o autom?tica
-
-A aplica??o foi inicialmente implantada na vers?o 1.0.0.
-
-Ap?s uma altera??o no c?digo, cria??o de uma nova branch, aprova??o dos testes e merge na main, o GitHub Actions realizou automaticamente a publica??o de uma nova imagem Docker no Amazon ECR e o deploy na Amazon EC2.
-
-A aplica??o passou a apresentar a vers?o 1.1.0, comprovando o funcionamento da pipeline CI/CD.
+Após a aprovação dos testes e o merge na main,
+o GitHub Actions publicou uma nova imagem no Amazon ECR
+e atualizou automaticamente a EC2 para a versão 1.1.0.
